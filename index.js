@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const multer = require("multer");
 const path = require("path");
+const bcrypt = require("bcrypt");
 const fs = require("fs");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 
@@ -61,12 +62,64 @@ async function run() {
     const news_collection = DB.collection("news");
     const contacts_collection = DB.collection("contacts");
     const quotes_collection = DB.collection("quotes");
+    const users_collection = DB.collection("users");
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
 
     // POST routes
+    app.post("/signup", async (req, res) => {
+      try {
+        const { name, email, password } = req.body;
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create a new user object with the hashed password
+        const newUser = {
+          name,
+          email,
+          password: hashedPassword,
+        };
+
+        // Insert the new user into the collection
+        const result = await users_collection.insertOne(newUser);
+
+        // Send a response back to the client
+        res.send(result);
+      } catch (error) {
+        console.error("Error during signup:", error);
+        res.status(500).send("An error occurred during signup.");
+      }
+    });
+
+    app.post("/login", async (req, res) => {
+      try {
+        const { email, password } = req.body;
+
+        // Find the user by email
+        const user = await users_collection.findOne({ email });
+
+        if (!user) {
+          return res.status(404).send("User not found");
+        }
+
+        // Compare the provided password with the hashed password in the database
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+          return res.status(401).send("Invalid credentials");
+        }
+
+        // Successful login
+        res.send("Login successful");
+      } catch (error) {
+        console.error("Error during login:", error);
+        res.status(500).send("An error occurred during login.");
+      }
+    });
+
     app.post("/videos", async (req, res) => {
       const video = req.body;
       const result = await videos_collection.insertOne(video);
