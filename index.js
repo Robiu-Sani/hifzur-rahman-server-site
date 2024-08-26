@@ -5,19 +5,13 @@ const multer = require("multer");
 const path = require("path");
 const bcrypt = require("bcrypt");
 const fs = require("fs");
-const { MongoClient, ServerApiVersion } = require("mongodb");
-
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb"); // Include ObjectId
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Default route
-app.get("/", (req, res) => {
-  res.send("Dr Hifzur Rahman's website API");
-});
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, "uploads");
@@ -49,6 +43,7 @@ const client = new MongoClient(uri, {
   },
 });
 
+// Create collections
 async function run() {
   try {
     await client.connect();
@@ -60,6 +55,7 @@ async function run() {
     const images_collection = DB.collection("images");
     const programms_collection = DB.collection("programms");
     const news_collection = DB.collection("news");
+    const books_collection = DB.collection("books");
     const contacts_collection = DB.collection("contacts");
     const quotes_collection = DB.collection("quotes");
     const users_collection = DB.collection("users");
@@ -71,7 +67,7 @@ async function run() {
     // POST routes
     app.post("/signup", async (req, res) => {
       try {
-        const { name, email, password } = req.body;
+        const { name, email, password, status } = req.body;
 
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -81,6 +77,7 @@ async function run() {
           name,
           email,
           password: hashedPassword,
+          status,
         };
 
         // Insert the new user into the collection
@@ -175,6 +172,30 @@ async function run() {
       }
     });
 
+    app.post("/books", upload.single("bookImage"), async (req, res) => {
+      try {
+        const currentDateTime = new Date().toLocaleString();
+
+        const book = {
+          bookname: req.body.bookname,
+          description: req.body.description,
+          pdfDriveLink: req.body.pdfDriveLink,
+          buyLink: req.body.buyLink,
+          publisher: req.body.publisher,
+          totalPage: req.body.totalPage,
+          bookImage: req.file ? req.file.path : null, // Save file path for the uploaded image
+          date: currentDateTime,
+        };
+
+        const result = await books_collection.insertOne(book);
+        res.send(result);
+      } catch (error) {
+        res
+          .status(500)
+          .send({ error: "An error occurred while creating the book post" });
+      }
+    });
+
     app.post("/news", upload.single("image"), async (req, res) => {
       try {
         const news = {
@@ -208,9 +229,30 @@ async function run() {
     });
 
     // GET routes
+    app.get("/users/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        console.log(email);
+        const user = await users_collection.findOne({ email: email });
+
+        if (user) {
+          res.send(user);
+        } else {
+          res.status(404).send({ message: "User not found" });
+        }
+      } catch (error) {
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
     app.get("/videos", async (req, res) => {
       const videos = await videos_collection.find().toArray();
       res.send(videos);
+    });
+
+    app.get("/books", async (req, res) => {
+      const books = await books_collection.find().toArray();
+      res.send(books);
     });
 
     app.get("/blogs", async (req, res) => {
@@ -243,7 +285,7 @@ async function run() {
       res.send(contacts);
     });
 
-    //delete data
+    // DELETE routes
     app.delete("/videos/:id", async (req, res) => {
       const { id } = req.params;
       const result = await videos_collection.deleteOne({
@@ -294,7 +336,9 @@ async function run() {
 
     app.delete("/news/:id", async (req, res) => {
       const { id } = req.params;
-      const result = await news_collection.deleteOne({ _id: new ObjectId(id) });
+      const result = await news_collection.deleteOne({
+        _id: new ObjectId(id),
+      });
       if (result.deletedCount === 1) {
         res.status(200).send({ message: "News deleted successfully." });
       } else {
@@ -302,15 +346,15 @@ async function run() {
       }
     });
 
-    app.delete("/quotes/:id", async (req, res) => {
+    app.delete("/books/:id", async (req, res) => {
       const { id } = req.params;
-      const result = await quotes_collection.deleteOne({
+      const result = await books_collection.deleteOne({
         _id: new ObjectId(id),
       });
       if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Quote deleted successfully." });
+        res.status(200).send({ message: "Book deleted successfully." });
       } else {
-        res.status(404).send({ message: "Quote not found." });
+        res.status(404).send({ message: "Book not found." });
       }
     });
 
@@ -325,14 +369,26 @@ async function run() {
         res.status(404).send({ message: "Contact not found." });
       }
     });
+
+    app.delete("/quotes/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await quotes_collection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      if (result.deletedCount === 1) {
+        res.status(200).send({ message: "Quote deleted successfully." });
+      } else {
+        res.status(404).send({ message: "Quote not found." });
+      }
+    });
   } finally {
-    // No closing connection here as it would close the connection after the first request
+    // Optionally close the MongoDB connection
+    // await client.close();
   }
 }
 
 run().catch(console.dir);
 
-// Start server
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
