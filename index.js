@@ -2,9 +2,9 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const multer = require("multer");
-const path = require("path");
+// const path = require("path");
 const bcrypt = require("bcrypt");
-const fs = require("fs");
+// const fs = require("fs");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb"); // Include ObjectId
 const app = express();
 const port = process.env.PORT || 5000;
@@ -14,22 +14,22 @@ app.use(cors());
 app.use(express.json());
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// const uploadsDir = path.join(__dirname, "uploads");
+// if (!fs.existsSync(uploadsDir)) {
+//   fs.mkdirSync(uploadsDir, { recursive: true });
+// }
 
-// Set up storage engine for multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
+// // Set up storage engine for multer
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, uploadsDir);
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, Date.now() + path.extname(file.originalname));
+//   },
+// });
 
-const upload = multer({ storage });
+// const upload = multer({ storage });
 
 // MongoDB connection setup
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.kqtkn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -123,17 +123,8 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/blogs", upload.single("image"), async (req, res) => {
-      const { title, description } = req.body;
-      const image = req.file ? req.file.path : null;
-      const currentDateTime = new Date().toLocaleString();
-
-      const blogData = {
-        title,
-        description,
-        image,
-        date: currentDateTime,
-      };
+    app.post("/blogs", async (req, res) => {
+      const blogData = req.body;
 
       try {
         const result = await blogs_collection.insertOne(blogData);
@@ -149,20 +140,8 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/programms", upload.single("image"), async (req, res) => {
-      const { title, description, programSpace, date, startTime, endTime } =
-        req.body;
-      const image = req.file ? req.file.path : null;
-
-      const MainData = {
-        title,
-        description,
-        programSpace,
-        date,
-        startTime,
-        endTime,
-        image,
-      };
+    app.post("/programms", async (req, res) => {
+      const MainData = req.body;
 
       try {
         const result = await programms_collection.insertOne(MainData);
@@ -172,20 +151,9 @@ async function run() {
       }
     });
 
-    app.post("/books", upload.single("bookImage"), async (req, res) => {
+    app.post("/books", async (req, res) => {
       try {
-        const currentDateTime = new Date().toLocaleString();
-
-        const book = {
-          bookname: req.body.bookname,
-          description: req.body.description,
-          pdfDriveLink: req.body.pdfDriveLink,
-          buyLink: req.body.buyLink,
-          publisher: req.body.publisher,
-          totalPage: req.body.totalPage,
-          bookImage: req.file ? req.file.path : null, // Save file path for the uploaded image
-          date: currentDateTime,
-        };
+        const book = req.body;
 
         const result = await books_collection.insertOne(book);
         res.send(result);
@@ -196,17 +164,9 @@ async function run() {
       }
     });
 
-    app.post("/news", upload.single("image"), async (req, res) => {
+    app.post("/news", async (req, res) => {
       try {
-        const news = {
-          title: req.body.title,
-          description: req.body.description,
-          category: req.body.category,
-          publicationDate: req.body.publicationDate,
-          tags: req.body.tags,
-          imagePath: req.file ? req.file.path : null, // Save file path if needed
-          date: req.body.date,
-        };
+        const news = req.body;
         const result = await news_collection.insertOne(news);
         res.send(result);
       } catch (error) {
@@ -243,6 +203,11 @@ async function run() {
       } catch (error) {
         res.status(500).send({ message: "Server error" });
       }
+    });
+
+    app.get("/users", async (req, res) => {
+      const users = await users_collection.find().toArray();
+      res.send(users);
     });
 
     app.get("/videos", async (req, res) => {
