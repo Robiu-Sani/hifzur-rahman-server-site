@@ -2,9 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const multer = require("multer");
-// const path = require("path");
 const bcrypt = require("bcrypt");
-// const fs = require("fs");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb"); // Include ObjectId
 const app = express();
 const port = process.env.PORT || 5000;
@@ -12,24 +10,6 @@ const port = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Ensure uploads directory exists
-// const uploadsDir = path.join(__dirname, "uploads");
-// if (!fs.existsSync(uploadsDir)) {
-//   fs.mkdirSync(uploadsDir, { recursive: true });
-// }
-
-// // Set up storage engine for multer
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, uploadsDir);
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, Date.now() + path.extname(file.originalname));
-//   },
-// });
-
-// const upload = multer({ storage });
 
 // MongoDB connection setup
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.kqtkn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -65,6 +45,7 @@ async function run() {
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
 
+    // PATCH route
     app.patch("/users/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -75,8 +56,12 @@ async function run() {
           status: status.status,
         },
       };
-      const result = await users_collection.updateOne(query, updateData);
-      res.send(result);
+      try {
+        const result = await users_collection.updateOne(query, updateData);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error updating user");
+      }
     });
 
     // POST routes
@@ -133,21 +118,28 @@ async function run() {
     });
 
     app.post("/videos", async (req, res) => {
-      const video = req.body;
-      const result = await videos_collection.insertOne(video);
-      res.send(result);
+      try {
+        const video = req.body;
+        const result = await videos_collection.insertOne(video);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error creating video");
+      }
     });
 
     app.post("/ContactsMessages", async (req, res) => {
-      const video = req.body;
-      const result = await ContactsMessages_collection.insertOne(video);
-      res.send(result);
+      try {
+        const message = req.body;
+        const result = await ContactsMessages_collection.insertOne(message);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error creating contact message");
+      }
     });
 
     app.post("/blogs", async (req, res) => {
-      const blogData = req.body;
-
       try {
+        const blogData = req.body;
         const result = await blogs_collection.insertOne(blogData);
         res.status(200).send(result);
       } catch (error) {
@@ -156,15 +148,18 @@ async function run() {
     });
 
     app.post("/images", async (req, res) => {
-      const image = req.body;
-      const result = await images_collection.insertOne(image);
-      res.send(result);
+      try {
+        const image = req.body;
+        const result = await images_collection.insertOne(image);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error creating image");
+      }
     });
 
     app.post("/programms", async (req, res) => {
-      const MainData = req.body;
-
       try {
+        const MainData = req.body;
         const result = await programms_collection.insertOne(MainData);
         res.status(200).send(result);
       } catch (error) {
@@ -175,13 +170,10 @@ async function run() {
     app.post("/books", async (req, res) => {
       try {
         const book = req.body;
-
         const result = await books_collection.insertOne(book);
         res.send(result);
       } catch (error) {
-        res
-          .status(500)
-          .send({ error: "An error occurred while creating the book post" });
+        res.status(500).send("Error creating book post");
       }
     });
 
@@ -191,29 +183,34 @@ async function run() {
         const result = await news_collection.insertOne(news);
         res.send(result);
       } catch (error) {
-        res
-          .status(500)
-          .send({ error: "An error occurred while creating the news post" });
+        res.status(500).send("Error creating news post");
       }
     });
 
     app.post("/contacts", async (req, res) => {
-      const contact = req.body;
-      const result = await contacts_collection.insertOne(contact);
-      res.send(result);
+      try {
+        const contact = req.body;
+        const result = await contacts_collection.insertOne(contact);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error creating contact");
+      }
     });
 
     app.post("/quotes", async (req, res) => {
-      const quotes = req.body;
-      const result = await quotes_collection.insertOne(quotes);
-      res.send(result);
+      try {
+        const quotes = req.body;
+        const result = await quotes_collection.insertOne(quotes);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error creating quote");
+      }
     });
 
     // GET routes
     app.get("/users/:email", async (req, res) => {
       try {
         const email = req.params.email;
-        console.log(email);
         const user = await users_collection.findOne({ email: email });
 
         if (user) {
@@ -227,183 +224,191 @@ async function run() {
     });
 
     app.get("/users", async (req, res) => {
-      const users = await users_collection.find().toArray();
-      res.send(users);
+      try {
+        const users = await users_collection.find().toArray();
+        res.send(users);
+      } catch (error) {
+        res.status(500).send("Error fetching users");
+      }
     });
 
     app.get("/ContactsMessages", async (req, res) => {
-      const users = await ContactsMessages_collection.find().toArray();
-      res.send(users);
+      try {
+        const messages = await ContactsMessages_collection.find().toArray();
+        res.send(messages);
+      } catch (error) {
+        res.status(500).send("Error fetching contact messages");
+      }
     });
 
     app.get("/videos", async (req, res) => {
-      const videos = await videos_collection.find().toArray();
-      res.send(videos);
+      try {
+        const videos = await videos_collection.find().toArray();
+        res.send(videos);
+      } catch (error) {
+        res.status(500).send("Error fetching videos");
+      }
     });
 
     app.get("/books", async (req, res) => {
-      const books = await books_collection.find().toArray();
-      res.send(books);
+      try {
+        const books = await books_collection.find().toArray();
+        res.send(books);
+      } catch (error) {
+        res.status(500).send("Error fetching books");
+      }
     });
 
     app.get("/blogs", async (req, res) => {
-      const blogs = await blogs_collection.find().toArray();
-      res.send(blogs);
+      try {
+        const blogs = await blogs_collection.find().toArray();
+        res.send(blogs);
+      } catch (error) {
+        res.status(500).send("Error fetching blogs");
+      }
     });
 
     app.get("/images", async (req, res) => {
-      const images = await images_collection.find().toArray();
-      res.send(images);
+      try {
+        const images = await images_collection.find().toArray();
+        res.send(images);
+      } catch (error) {
+        res.status(500).send("Error fetching images");
+      }
     });
 
     app.get("/programms", async (req, res) => {
-      const programms = await programms_collection.find().toArray();
-      res.send(programms);
+      try {
+        const programms = await programms_collection.find().toArray();
+        res.send(programms);
+      } catch (error) {
+        res.status(500).send("Error fetching programs");
+      }
     });
 
     app.get("/news", async (req, res) => {
-      const news = await news_collection.find().toArray();
-      res.send(news);
+      try {
+        const news = await news_collection.find().toArray();
+        res.send(news);
+      } catch (error) {
+        res.status(500).send("Error fetching news");
+      }
     });
 
     app.get("/quotes", async (req, res) => {
-      const quotes = await quotes_collection.find().toArray();
-      res.send(quotes);
+      try {
+        const quotes = await quotes_collection.find().toArray();
+        res.send(quotes);
+      } catch (error) {
+        res.status(500).send("Error fetching quotes");
+      }
     });
 
     app.get("/contacts", async (req, res) => {
-      const contacts = await contacts_collection.find().toArray();
-      res.send(contacts);
+      try {
+        const contacts = await contacts_collection.find().toArray();
+        res.send(contacts);
+      } catch (error) {
+        res.status(500).send("Error fetching contacts");
+      }
     });
 
     // DELETE routes
-    app.delete("/videos/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await videos_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Video deleted successfully." });
-      } else {
-        res.status(404).send({ message: "Video not found." });
+    app.delete("/images/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await images_collection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error deleting image");
       }
     });
 
     app.delete("/blogs/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await blogs_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Blog deleted successfully." });
-      } else {
-        res.status(404).send({ message: "Blog not found." });
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await blogs_collection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error deleting blog");
       }
     });
 
-    app.delete("/users/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await users_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Image deleted successfully." });
-      } else {
-        res.status(404).send({ message: "Image not found." });
-      }
-    });
-
-    app.delete("/images/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await images_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Image deleted successfully." });
-      } else {
-        res.status(404).send({ message: "Image not found." });
-      }
-    });
-
-    app.delete("/ContactsMessages/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await ContactsMessages_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Image deleted successfully." });
-      } else {
-        res.status(404).send({ message: "Image not found." });
-      }
-    });
-
-    app.delete("/programms/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await programms_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Program deleted successfully." });
-      } else {
-        res.status(404).send({ message: "Program not found." });
-      }
-    });
-
-    app.delete("/news/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await news_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "News deleted successfully." });
-      } else {
-        res.status(404).send({ message: "News not found." });
+    app.delete("/videos/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await videos_collection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error deleting video");
       }
     });
 
     app.delete("/books/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await books_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Book deleted successfully." });
-      } else {
-        res.status(404).send({ message: "Book not found." });
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await books_collection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error deleting book");
+      }
+    });
+
+    app.delete("/programms/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await programms_collection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error deleting program");
+      }
+    });
+
+    app.delete("/news/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await news_collection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error deleting news");
       }
     });
 
     app.delete("/contacts/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await contacts_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Contact deleted successfully." });
-      } else {
-        res.status(404).send({ message: "Contact not found." });
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await contacts_collection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error deleting contact");
       }
     });
 
     app.delete("/quotes/:id", async (req, res) => {
-      const { id } = req.params;
-      const result = await quotes_collection.deleteOne({
-        _id: new ObjectId(id),
-      });
-      if (result.deletedCount === 1) {
-        res.status(200).send({ message: "Quote deleted successfully." });
-      } else {
-        res.status(404).send({ message: "Quote not found." });
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await quotes_collection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send("Error deleting quote");
       }
     });
-  } finally {
-    // Optionally close the MongoDB connection
-    // await client.close();
+
+    // Server
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  } catch (error) {
+    console.error("Error connecting to MongoDB", error);
   }
 }
 
 run().catch(console.dir);
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
