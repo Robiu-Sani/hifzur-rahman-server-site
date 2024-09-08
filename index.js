@@ -59,10 +59,25 @@ async function run() {
     const contacts_collection = DB.collection("contacts");
     const quotes_collection = DB.collection("quotes");
     const users_collection = DB.collection("users");
+    const ContactsMessages_collection = DB.collection("ContactsMessages");
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
+
+    app.patch("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const status = req.body;
+      console.log(status);
+      const updateData = {
+        $set: {
+          status: status.status,
+        },
+      };
+      const result = await users_collection.updateOne(query, updateData);
+      res.send(result);
+    });
 
     // POST routes
     app.post("/signup", async (req, res) => {
@@ -120,6 +135,12 @@ async function run() {
     app.post("/videos", async (req, res) => {
       const video = req.body;
       const result = await videos_collection.insertOne(video);
+      res.send(result);
+    });
+
+    app.post("/ContactsMessages", async (req, res) => {
+      const video = req.body;
+      const result = await ContactsMessages_collection.insertOne(video);
       res.send(result);
     });
 
@@ -210,6 +231,11 @@ async function run() {
       res.send(users);
     });
 
+    app.get("/ContactsMessages", async (req, res) => {
+      const users = await ContactsMessages_collection.find().toArray();
+      res.send(users);
+    });
+
     app.get("/videos", async (req, res) => {
       const videos = await videos_collection.find().toArray();
       res.send(videos);
@@ -275,9 +301,33 @@ async function run() {
       }
     });
 
+    app.delete("/users/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await users_collection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      if (result.deletedCount === 1) {
+        res.status(200).send({ message: "Image deleted successfully." });
+      } else {
+        res.status(404).send({ message: "Image not found." });
+      }
+    });
+
     app.delete("/images/:id", async (req, res) => {
       const { id } = req.params;
       const result = await images_collection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      if (result.deletedCount === 1) {
+        res.status(200).send({ message: "Image deleted successfully." });
+      } else {
+        res.status(404).send({ message: "Image not found." });
+      }
+    });
+
+    app.delete("/ContactsMessages/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await ContactsMessages_collection.deleteOne({
         _id: new ObjectId(id),
       });
       if (result.deletedCount === 1) {
